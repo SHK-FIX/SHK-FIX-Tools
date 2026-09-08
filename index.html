@@ -13,7 +13,7 @@
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <div class="brand"><span>SHK</span> <strong>FIX</strong></div>
+      <div class="brand" id="brandHome" role="button" tabindex="0" aria-label="Zur Hauptseite"><span>SHK</span> <strong>FIX</strong></div>
       <div class="subtitle">Abwasser-Aufmaß</div>
       <button id="homeBtn" class="icon-btn" aria-label="Startseite">⌂</button>
     </header>
@@ -34,5 +34,6 @@
   <script src="pdf-unicode.js"></script>
   <script src="photo-ui.js"></script>
   <script src="pdf-photos.js"></script>
+  <script>const brandHome=document.getElementById('brandHome');const goHome=()=>render('project');brandHome.addEventListener('click',goHome);brandHome.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();goHome();}});</script>
 </body>
 </html>
