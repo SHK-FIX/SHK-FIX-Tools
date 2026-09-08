@@ -1,0 +1,9 @@
+const SHKPhotoStore=(()=>{
+  const DB='shkfix-aufmass-db', STORE='photos', VERSION=1;
+  function open(){return new Promise((resolve,reject)=>{const r=indexedDB.open(DB,VERSION);r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains(STORE)){const s=db.createObjectStore(STORE,{keyPath:'id'});s.createIndex('projectKey','projectKey');}};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
+  async function list(projectKey){const db=await open();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readonly');const req=tx.objectStore(STORE).index('projectKey').getAll(projectKey);req.onsuccess=()=>resolve(req.result.sort((a,b)=>b.createdAt.localeCompare(a.createdAt)));req.onerror=()=>reject(req.error);});}
+  async function put(photo){const db=await open();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(photo);tx.oncomplete=()=>resolve(photo);tx.onerror=()=>reject(tx.error);});}
+  async function remove(id){const db=await open();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(id);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});}
+  async function compress(file,max=1600,quality=.78){const bitmap=await createImageBitmap(file);const scale=Math.min(1,max/Math.max(bitmap.width,bitmap.height));const w=Math.round(bitmap.width*scale),h=Math.round(bitmap.height*scale);const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(bitmap,0,0,w,h);bitmap.close?.();const blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',quality));if(!blob) throw new Error('Foto konnte nicht verarbeitet werden.');return blob;}
+  return {list,put,remove,compress};
+})();
