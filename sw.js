@@ -1,5 +1,5 @@
-const CACHE='shkfix-aufmass-v9';
-const ASSETS=['./','./index.html','./styles.css','./app.js','./workflow-v4.js','./pdf-unicode.js','./photo-store.js','./photo-ui.js','./pdf-photos.js','./manifest.json'];
+const CACHE='shkfix-aufmass-v10';
+const ASSETS=['./','./index.html?v=10','./styles.css?v=10','./app.js?v=10','./workflow-v4.js?v=10','./pdf-unicode.js?v=10','./photo-store.js?v=10','./photo-ui.js?v=10','./pdf-photos.js?v=10','./manifest.json?v=10'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();
@@ -19,11 +19,7 @@ self.addEventListener('fetch',event=>{
   const request=event.request;
   const isNavigation=request.mode==='navigate';
   if(isNavigation){
-    event.respondWith(fetch(request).then(response=>{
-      const copy=response.clone();
-      caches.open(CACHE).then(cache=>cache.put('./index.html',copy));
-      return response;
-    }).catch(()=>caches.match('./index.html')));
+    event.respondWith(fetch(request).catch(()=>caches.match('./index.html?v=10')));
     return;
   }
   event.respondWith(fetch(request).then(response=>{
