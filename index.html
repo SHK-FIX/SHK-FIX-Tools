@@ -7,8 +7,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>SHK FIX – Abwasser-Aufmaß</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="manifest" href="manifest.json?v=9" />
+  <link rel="stylesheet" href="styles.css?v=9" />
 </head>
 <body>
   <div class="app-shell">
@@ -28,12 +28,11 @@
   <template id="screen-measure"><section><div class="row between"><div><div class="eyebrow">Aufmaß</div><h1 id="projectTitle">Projekt</h1></div><span class="status">Offline gespeichert</span></div><div class="section-grid"><button class="module-card" data-module="Fallleitung"><span>↕</span><b>Fallleitung</b><small>Leitungen & Formteile</small></button><button class="module-card" data-module="Grundleitung"><span>↔</span><b>Grundleitung</b><small>Längen & Gefälle</small></button><button class="module-card" data-module="Anschlussleitungen"><span>⑂</span><b>Anschlussleitungen</b><small>WC, WT, Dusche …</small></button><button class="module-card" data-module="Brandschutz"><span>◈</span><b>Brandschutz</b><small>Durchführungen & Verbinder</small></button><button class="module-card" data-module="Material"><span>▦</span><b>Material</b><small>automatisch + manuell</small></button><button class="module-card" data-module="Fotos & Notizen"><span>▣</span><b>Fotos & Notizen</b><small>Dokumentation</small></button></div><div class="card time-card"><div><div class="eyebrow">Pflichtangabe</div><h2>Aufmaßdauer</h2><p>In 15‑Minuten‑Schritten.</p></div><div class="stepper"><button data-action="minus-time">−</button><strong id="timeValue">1 Std.</strong><button data-action="plus-time">+</button></div></div><button class="primary full" data-action="to-summary">Zusammenfassung prüfen</button></section></template>
   <template id="screen-module"><section><button class="back" data-action="back-measure">← Zurück</button><div class="eyebrow">Bereich erfassen</div><h1 id="moduleTitle">Bereich</h1><div class="card form-grid"><label>Bezeichnung / Lage<input id="positionName" placeholder="z. B. Schacht Bad EG" /></label><label>Material<select id="material"><option>HT</option><option>KG</option><option>SML</option><option>PE-HD</option><option>DB20</option><option>Sonstiges</option></select></label><label>Dimension<select id="dn"><option>DN 32</option><option>DN 40</option><option>DN 50</option><option>DN 56</option><option>DN 63</option><option>DN 70</option><option>DN 75</option><option>DN 80</option><option>DN 90</option><option selected>DN 100</option><option>DN 110</option><option>DN 125</option><option>DN 150</option><option>DN 160</option><option>DN 200</option><option>DN 250</option><option>DN 300</option></select></label><label>Länge (m)<input id="length" type="number" inputmode="decimal" step="0.1" value="0" /></label></div><div class="card"><h2>Formteile / Stückzahlen</h2><div class="qty-grid" id="qtyGrid"></div></div><div class="card"><label>Besonderheiten<textarea id="notes" rows="4" placeholder="Enger Schacht, Bestand, Sonderlösung …"></textarea></label></div><button class="primary full" data-action="save-position">Position speichern</button></section></template>
   <template id="screen-summary"><section><div class="eyebrow">Abschluss</div><h1>Zusammenfassung</h1><div class="card summary-hero"><div><small>Projekt</small><h2 id="summaryProject">–</h2><p id="summaryUnit">–</p></div><span class="status ok">✓ bereit</span></div><div class="card"><div class="summary-row"><span>Erfasste Positionen</span><strong id="summaryPositions">0</strong></div><div class="summary-row"><span>Aufmaßdauer</span><strong id="summaryTime">–</strong></div><div class="summary-row"><span>Bearbeiter</span><strong id="summaryWorker">–</strong></div></div><div class="card"><h2>Bereiche</h2><div id="summaryModules" class="mini-list"></div></div><button class="secondary full" data-action="print">PDF erzeugen</button><button class="primary full" data-action="share">An Büro senden</button><p class="hint">Erstellt die PDF lokal inklusive Fotodokumentation und öffnet das normale iOS‑Teilen. Mail oder WhatsApp auswählen und absenden.</p></section></template>
-  <script src="photo-store.js"></script>
-  <script src="app.js"></script>
-  <script src="module-v2.js"></script>
-  <script src="pdf-unicode.js"></script>
-  <script src="photo-ui.js"></script>
-  <script src="pdf-photos.js"></script>
-  <script src="workflow-v4.js"></script>
+  <script src="photo-store.js?v=9"></script>
+  <script src="app.js?v=9"></script>
+  <script src="pdf-unicode.js?v=9"></script>
+  <script src="photo-ui.js?v=9"></script>
+  <script src="pdf-photos.js?v=9"></script>
+  <script src="workflow-v4.js?v=9"></script>
 </body>
 </html>
