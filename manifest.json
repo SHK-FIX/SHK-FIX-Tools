@@ -1,0 +1,9 @@
+{
+  "name": "SHK FIX Abwasser-Aufmaß",
+  "short_name": "SHK Aufmaß",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#eef3f7",
+  "theme_color": "#0b2b4f",
+  "description": "Offlinefähiges Abwasser-Aufmaß für iPhone und iPad"
+}
