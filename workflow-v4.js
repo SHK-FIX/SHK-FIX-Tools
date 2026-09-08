@@ -10,7 +10,7 @@
 
   function blankSurvey(){return{pipes:[{id:uid(),dn:'DN 100',meters:0}],bends:[],connectors:[],branches:[],extraMaterials:[],fire:{collars:[],insulation:[],concrete:null},notes:''};}
   function ensureSurvey(){if(!state.survey)state.survey=blankSurvey();if(!state.status)state.status=state.project?.object?'open':null;}
-  function loadHistory(){try{return JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');}catch{return[];}}
+  function loadHistory(){try{const value=JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]');return Array.isArray(value)?value:[];}catch{return[];}}
   function saveHistory(v){localStorage.setItem(HISTORY_KEY,JSON.stringify(v));}
   function saveAll(){saveState();}
 
@@ -58,60 +58,45 @@
     render('project');
     const section=app.querySelector('section');
     section?.insertAdjacentHTML('afterbegin','<button class="back" id="projectHome">← Hauptseite</button>');
-    document.getElementById('projectHome').onclick=renderHome;
+    const back=document.getElementById('projectHome');if(back)back.onclick=renderHome;
+  }
+
+  function normalizeSurvey(){
+    ensureSurvey();
+    if(!Array.isArray(state.survey.pipes))state.survey.pipes=[];
+    if(!Array.isArray(state.survey.bends))state.survey.bends=[];
+    if(!Array.isArray(state.survey.connectors))state.survey.connectors=[];
+    if(!Array.isArray(state.survey.branches))state.survey.branches=[];
+    if(!Array.isArray(state.survey.extraMaterials))state.survey.extraMaterials=[];
+    if(!state.survey.fire)state.survey.fire={collars:[],insulation:[],concrete:null};
+    if(!Array.isArray(state.survey.fire.collars))state.survey.fire.collars=[];
+    if(!Array.isArray(state.survey.fire.insulation))state.survey.fire.insulation=[];
+    if(!state.survey.pipes.length)state.survey.pipes.push({id:uid(),dn:'DN 100',meters:0});
   }
 
   function renderSurvey(){
-    ensureSurvey();state.status='open';saveAll();
+    normalizeSurvey();state.status='open';saveAll();
     const s=state.survey;
     app.innerHTML=`<section class="survey-v4"><button class="back" id="surveyHome">← Hauptseite</button><div class="row between"><div><div class="eyebrow">Neues Aufmaß</div><h1>${esc(state.project.object)}</h1><p class="lead">${esc(state.project.unit||'')}</p></div><span class="status">Offline gespeichert</span></div>
-
       <div class="card">${cardTitle('1. Rohrdimensionen','Mehrere Dimensionen können gleichzeitig erfasst werden.','Rohr','pipe')}<div id="pipesV4" class="selection-list">${s.pipes.map(pipeRow).join('')}</div></div>
-
       <div class="card">${cardTitle('2. Bögen','Dimension, Winkel und Menge getrennt auswählen.','Bogen','bend')}<div id="bendsV4" class="selection-list">${s.bends.length?s.bends.map(bendRow).join(''):'<p class="empty-note">Noch keine Bögen ausgewählt.</p>'}</div></div>
-
       <div class="card">${cardTitle('3. Verbinder, Übergänge usw.','Für Sondermaße steht immer „andere Dimension“ zur Verfügung.','Bauteil','connector')}<div id="connectorsV4" class="selection-list">${s.connectors.length?s.connectors.map(connectorRow).join(''):'<p class="empty-note">Noch keine weiteren Formteile ausgewählt.</p>'}</div></div>
-
       <div class="card">${cardTitle('4. Abzweige','Hauptleitung, Abgang, Winkel und Menge.','Abzweig','branch')}<div id="branchesV4" class="selection-list">${s.branches.length?s.branches.map(branchRow).join(''):'<p class="empty-note">Noch keine Abzweige ausgewählt.</p>'}</div></div>
-
       <div class="card">${cardTitle('5. Zusatzmaterial','Freies Material, das in keine der oberen Gruppen passt.','Material','extra')}<div id="extraV4" class="selection-list">${s.extraMaterials.length?s.extraMaterials.map(extraRow).join(''):'<p class="empty-note">Kein Zusatzmaterial erfasst.</p>'}</div></div>
-
       <div class="card"><div class="eyebrow">Brandschutz</div><h2>6. Brandschutz</h2><div class="subsection">${cardTitle('Brandschutzmanschetten','Mehrere DN möglich.','Manschette','collar')}<div id="collarsV4" class="selection-list">${s.fire.collars.length?s.fire.collars.map(collarRow).join(''):'<p class="empty-note">Keine Manschetten ausgewählt.</p>'}</div></div><div class="subsection">${cardTitle('Brandschutzisolierung','Mehrere Dimensionen möglich.','Isolierung','insulation')}<div id="insulationV4" class="selection-list">${s.fire.insulation.length?s.fire.insulation.map(insulationRow).join(''):'<p class="empty-note">Keine Isolierung ausgewählt.</p>'}</div></div><div class="subsection"><h3>Betonarbeiten notwendig?</h3><div class="choice-pair"><button type="button" data-concrete="yes" class="choice ${s.fire.concrete===true?'active':''}">✓ Ja</button><button type="button" data-concrete="no" class="choice ${s.fire.concrete===false?'active':''}">Nein</button></div></div></div>
-
       <div class="card"><h2>7. Notizen</h2><textarea id="notesV4" rows="5" placeholder="Besonderheiten, Bestand, Zugänglichkeit …">${esc(s.notes||'')}</textarea></div>
-
-      <div class="card"><div class="row between"><div><h2>8. Fotos</h2><p class="hint">Fotos bleiben lokal und werden in die PDF übernommen.</p></div><span class="status" id="photoCountV4">0</span></div><button type="button" class="secondary full" id="openPhotosV4">📷 Fotos hinzufügen / ansehen</button></div>
-
+      <div class="card"><div class="row between"><div><h2>8. Fotos</h2><p class="hint">Fotofunktion wird wieder angebunden, sobald der neue Ablauf stabil läuft.</p></div><span class="status" id="photoCountV4">0</span></div><button type="button" class="secondary full" id="openPhotosV4" disabled>📷 Fotos – folgt</button></div>
       <div class="card time-card-v4"><div><h2>9. Arbeitszeit</h2><p class="hint">In 15-Minuten-Schritten.</p></div><div class="big-stepper time-stepper"><button type="button" id="timeMinusV4">−</button><strong id="timeV4">${fmtTime(state.minutes)}</strong><button type="button" id="timePlusV4">+</button></div></div>
-
-      <div class="finish-actions"><button type="button" class="secondary full" id="pdfV4">PDF erzeugen</button><button type="button" class="primary full" id="shareV4">An Büro senden</button><button type="button" class="finish-btn full" id="finishV4">✓ Aufmaß abschließen</button></div>
+      <div class="finish-actions"><button type="button" class="finish-btn full" id="finishV4">✓ Aufmaß abschließen</button></div>
     </section>`;
-
-    wireSurvey();refreshPhotoCount();window.scrollTo({top:0,behavior:'smooth'});
+    wireSurvey();window.scrollTo({top:0,behavior:'smooth'});
   }
 
-  function appendItem(kind){ensureSurvey();const s=state.survey;const makers={
-    pipe:()=>({id:uid(),dn:'DN 100',meters:0}),bend:()=>({id:uid(),dn:'DN 100',angle:'45°',qty:1}),connector:()=>({id:uid(),type:'Verbinder',dn:'DN 100',dn2:'DN 70',qty:1}),branch:()=>({id:uid(),mainDn:'DN 100',branchDn:'DN 70',angle:'45°',qty:1}),extra:()=>({id:uid(),name:'',qty:1}),collar:()=>({id:uid(),dn:'DN 100',qty:1}),insulation:()=>({id:uid(),dn:'DN 100',qty:1})};
-    const targets={pipe:s.pipes,bend:s.bends,connector:s.connectors,branch:s.branches,extra:s.extraMaterials,collar:s.fire.collars,insulation:s.fire.insulation};
-    targets[kind].push(makers[kind]());saveAll();renderSurvey();
-  }
+  function appendItem(kind){normalizeSurvey();const s=state.survey;const makers={pipe:()=>({id:uid(),dn:'DN 100',meters:0}),bend:()=>({id:uid(),dn:'DN 100',angle:'45°',qty:1}),connector:()=>({id:uid(),type:'Verbinder',dn:'DN 100',dn2:'DN 70',qty:1}),branch:()=>({id:uid(),mainDn:'DN 100',branchDn:'DN 70',angle:'45°',qty:1}),extra:()=>({id:uid(),name:'',qty:1}),collar:()=>({id:uid(),dn:'DN 100',qty:1}),insulation:()=>({id:uid(),dn:'DN 100',qty:1})};const targets={pipe:s.pipes,bend:s.bends,connector:s.connectors,branch:s.branches,extra:s.extraMaterials,collar:s.fire.collars,insulation:s.fire.insulation};targets[kind].push(makers[kind]());saveAll();renderSurvey();}
 
-  function syncSurveyFromDom(){
-    ensureSurvey();const s=state.survey;
-    const qty=r=>Number(r.querySelector('.qty-stepper')?.dataset.value||1);
-    s.pipes=[...document.querySelectorAll('[data-kind="pipe"]')].map(r=>({id:r.dataset.id,dn:readDn(r,'pipe-dn'),meters:Number(r.querySelector('.meter-value')?.value||0)}));
-    s.bends=[...document.querySelectorAll('[data-kind="bend"]')].map(r=>({id:r.dataset.id,dn:readDn(r,'bend-dn'),angle:r.querySelector('.bend-angle').value,qty:qty(r)}));
-    s.connectors=[...document.querySelectorAll('[data-kind="connector"]')].map(r=>({id:r.dataset.id,type:r.querySelector('.connector-type').value,dn:readDn(r,'connector-dn'),dn2:readDn(r,'connector-dn2'),qty:qty(r)}));
-    s.branches=[...document.querySelectorAll('[data-kind="branch"]')].map(r=>({id:r.dataset.id,mainDn:readDn(r,'main-dn'),branchDn:readDn(r,'branch-dn'),angle:r.querySelector('.branch-angle').value,qty:qty(r)}));
-    s.extraMaterials=[...document.querySelectorAll('[data-kind="extra"]')].map(r=>({id:r.dataset.id,name:r.querySelector('.extra-name').value.trim(),qty:qty(r)}));
-    s.fire.collars=[...document.querySelectorAll('[data-kind="collar"]')].map(r=>({id:r.dataset.id,dn:readDn(r,'collar-dn'),qty:qty(r)}));
-    s.fire.insulation=[...document.querySelectorAll('[data-kind="insulation"]')].map(r=>({id:r.dataset.id,dn:readDn(r,'insulation-dn'),qty:qty(r)}));
-    s.notes=document.getElementById('notesV4')?.value||'';saveAll();
-  }
+  function syncSurveyFromDom(){normalizeSurvey();const s=state.survey;const qty=r=>Number(r.querySelector('.qty-stepper')?.dataset.value||1);s.pipes=[...document.querySelectorAll('[data-kind="pipe"]')].map(r=>({id:r.dataset.id,dn:readDn(r,'pipe-dn'),meters:Number(r.querySelector('.meter-value')?.value||0)}));s.bends=[...document.querySelectorAll('[data-kind="bend"]')].map(r=>({id:r.dataset.id,dn:readDn(r,'bend-dn'),angle:r.querySelector('.bend-angle')?.value||'45°',qty:qty(r)}));s.connectors=[...document.querySelectorAll('[data-kind="connector"]')].map(r=>({id:r.dataset.id,type:r.querySelector('.connector-type')?.value||'Verbinder',dn:readDn(r,'connector-dn'),dn2:readDn(r,'connector-dn2'),qty:qty(r)}));s.branches=[...document.querySelectorAll('[data-kind="branch"]')].map(r=>({id:r.dataset.id,mainDn:readDn(r,'main-dn'),branchDn:readDn(r,'branch-dn'),angle:r.querySelector('.branch-angle')?.value||'45°',qty:qty(r)}));s.extraMaterials=[...document.querySelectorAll('[data-kind="extra"]')].map(r=>({id:r.dataset.id,name:r.querySelector('.extra-name')?.value.trim()||'',qty:qty(r)}));s.fire.collars=[...document.querySelectorAll('[data-kind="collar"]')].map(r=>({id:r.dataset.id,dn:readDn(r,'collar-dn'),qty:qty(r)}));s.fire.insulation=[...document.querySelectorAll('[data-kind="insulation"]')].map(r=>({id:r.dataset.id,dn:readDn(r,'insulation-dn'),qty:qty(r)}));s.notes=document.getElementById('notesV4')?.value||'';saveAll();}
 
   function removeByRow(row){syncSurveyFromDom();const kind=row.dataset.kind,id=row.dataset.id,s=state.survey;const targets={pipe:s.pipes,bend:s.bends,connector:s.connectors,branch:s.branches,extra:s.extraMaterials,collar:s.fire.collars,insulation:s.fire.insulation};targets[kind]=targets[kind].filter(x=>x.id!==id);if(kind==='pipe'&&!targets[kind].length)targets[kind].push({id:uid(),dn:'DN 100',meters:0});saveAll();renderSurvey();}
-
-  async function refreshPhotoCount(){try{const photos=window.SHKPhotos?await SHKPhotos.list():[];const el=document.getElementById('photoCountV4');if(el)el.textContent=photos.length;}catch{}}
 
   function wireSurvey(){
     document.getElementById('surveyHome').onclick=()=>{syncSurveyFromDom();renderHome();};
@@ -119,25 +104,24 @@
     document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>removeByRow(b.closest('.selection-card')));
     document.querySelectorAll('.dn-picker').forEach(s=>s.onchange=()=>{const custom=s.parentElement.querySelector('.dn-custom-v4');if(custom)custom.hidden=s.value!=='custom';syncSurveyFromDom();});
     document.querySelectorAll('input,select,textarea').forEach(el=>{if(!el.classList.contains('dn-picker'))el.addEventListener('change',syncSurveyFromDom);});
-    document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{const row=b.closest('.selection-card');if(b.dataset.step.startsWith('qty')){const stepper=b.closest('.qty-stepper');let v=Number(stepper.dataset.value||1);v=b.dataset.step==='qty-plus'?v+1:Math.max(1,v-1);stepper.dataset.value=v;stepper.querySelector('strong').textContent=v;}else{const input=row.querySelector('.meter-value');let v=Number(input.value||0);v=b.dataset.step==='meter-plus'?v+.1:Math.max(0,v-.1);input.value=(Math.round(v*10)/10).toFixed(1);}syncSurveyFromDom();};
+    document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{
+      const row=b.closest('.selection-card');
+      if(b.dataset.step.startsWith('qty')){
+        const stepper=b.closest('.qty-stepper');let v=Number(stepper.dataset.value||1);v=b.dataset.step==='qty-plus'?v+1:Math.max(1,v-1);stepper.dataset.value=v;stepper.querySelector('strong').textContent=v;
+      }else if(row){
+        const input=row.querySelector('.meter-value');let v=Number(input.value||0);v=b.dataset.step==='meter-plus'?v+.1:Math.max(0,v-.1);input.value=(Math.round(v*10)/10).toFixed(1);
+      }
+      syncSurveyFromDom();
+    });
     document.querySelectorAll('[data-concrete]').forEach(b=>b.onclick=()=>{state.survey.fire.concrete=b.dataset.concrete==='yes';saveAll();renderSurvey();});
     document.getElementById('timeMinusV4').onclick=()=>{state.minutes=Math.max(15,state.minutes-15);saveAll();document.getElementById('timeV4').textContent=fmtTime(state.minutes);};
     document.getElementById('timePlusV4').onclick=()=>{state.minutes+=15;saveAll();document.getElementById('timeV4').textContent=fmtTime(state.minutes);};
-    document.getElementById('openPhotosV4').onclick=async()=>{syncSurveyFromDom();if(window.SHKPhotos){await SHKPhotos.renderPhotos();const back=document.getElementById('photoBack');if(back)back.onclick=renderSurvey;}};
-    document.getElementById('pdfV4').onclick=()=>{syncSurveyFromDom();downloadPdf();};
-    document.getElementById('shareV4').onclick=async()=>{syncSurveyFromDom();await shareProject();};
     document.getElementById('finishV4').onclick=finishSurvey;
   }
 
-  function finishSurvey(){
-    syncSurveyFromDom();
-    if(!confirm('Aufmaß als abgeschlossen speichern?'))return;
-    const history=loadHistory();history.push({id:uid(),completedAt:new Date().toISOString(),project:clone(state.project),survey:clone(state.survey),minutes:state.minutes});saveHistory(history);
-    resetCurrent();renderHome();
-  }
+  function finishSurvey(){syncSurveyFromDom();if(!confirm('Aufmaß als abgeschlossen speichern?'))return;const history=loadHistory();history.push({id:uid(),completedAt:new Date().toISOString(),project:clone(state.project),survey:clone(state.survey),minutes:state.minutes});saveHistory(history);resetCurrent();renderHome();}
 
   document.addEventListener('click',e=>{
-    const brand=e.target.closest('.brand');if(brand){e.preventDefault();e.stopImmediatePropagation();renderHome();return;}
     const action=e.target.closest('[data-action]')?.dataset.action;
     if(action==='start'){
       e.preventDefault();e.stopImmediatePropagation();
@@ -147,8 +131,6 @@
     }
   },true);
 
-  document.querySelector('.brand')?.setAttribute('role','button');
-  document.querySelector('.brand')?.setAttribute('tabindex','0');
   window.SHKWorkflowV4={renderHome,renderSurvey};
   renderHome();
 })();
