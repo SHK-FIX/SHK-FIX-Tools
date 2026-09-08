@@ -102,5 +102,5 @@ async function shareProject(){
 }
 
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=11'));
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=12'));
 }
