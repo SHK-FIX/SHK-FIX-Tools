@@ -26,7 +26,53 @@ function componentText(c){
   return `${c.kind || 'Bauteil'} × ${c.qty || 1}`;
 }
 
+function buildSurveyPdfLines(){
+  const s=state.survey||{};
+  const lines=[
+    'SHK FIX – Abwasser-Aufmaß','',
+    `Objekt: ${state.project.object || '–'}`,
+    `Wohnung / Bereich: ${state.project.unit || '–'}`,
+    `Auftragsnummer: ${state.project.orderNo || '–'}`,
+    `Bearbeiter: ${state.project.worker || '–'}`,
+    `Arbeitszeit: ${fmtTime(state.minutes)}`,
+    `Erstellt: ${new Date().toLocaleString('de-DE')}`,'',
+    'Rohrdimensionen:'
+  ];
+  (s.pipes||[]).forEach(p=>lines.push(`• ${p.dn || '–'} – ${Number(p.meters||0).toLocaleString('de-DE')} m`));
+  if(!(s.pipes||[]).length)lines.push('• keine');
+
+  lines.push('','Bögen:');
+  (s.bends||[]).forEach(p=>lines.push(`• ${p.dn || '–'} – ${p.angle || '–'} × ${p.qty || 1}`));
+  if(!(s.bends||[]).length)lines.push('• keine');
+
+  lines.push('','Verbinder / Übergänge / weitere Formteile:');
+  (s.connectors||[]).forEach(p=>lines.push(`• ${p.type || 'Bauteil'} ${p.dn || '–'}${p.type==='Übergang'&&p.dn2?` → ${p.dn2}`:''} × ${p.qty || 1}`));
+  if(!(s.connectors||[]).length)lines.push('• keine');
+
+  lines.push('','Abzweige:');
+  (s.branches||[]).forEach(p=>lines.push(`• ${p.mainDn || '–'} / ${p.branchDn || '–'} – ${p.angle || '–'} × ${p.qty || 1}`));
+  if(!(s.branches||[]).length)lines.push('• keine');
+
+  lines.push('','Zusatzmaterial:');
+  (s.extraMaterials||[]).forEach(p=>lines.push(`• ${p.name || 'ohne Bezeichnung'} × ${p.qty || 1}`));
+  if(!(s.extraMaterials||[]).length)lines.push('• keines');
+
+  lines.push('','Brandschutzmanschetten:');
+  (s.fire?.collars||[]).forEach(p=>lines.push(`• ${p.dn || '–'} × ${p.qty || 1}`));
+  if(!(s.fire?.collars||[]).length)lines.push('• keine');
+
+  lines.push('','Brandschutzisolierung:');
+  (s.fire?.insulation||[]).forEach(p=>lines.push(`• ${p.dn || '–'} × ${p.qty || 1}`));
+  if(!(s.fire?.insulation||[]).length)lines.push('• keine');
+  lines.push(`Betonarbeiten notwendig: ${s.fire?.concrete===true?'Ja':s.fire?.concrete===false?'Nein':'–'}`);
+
+  lines.push('','Notizen:');
+  lines.push(s.notes?.trim()||'–');
+  return lines;
+}
+
 function buildPdfLines(){
+  if(state.survey) return buildSurveyPdfLines();
   const lines=[
     'SHK FIX – Abwasser-Aufmaß','',
     `Objekt: ${state.project.object || '–'}`,
