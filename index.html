@@ -7,8 +7,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>SHK FIX – Abwasser-Aufmaß</title>
-  <link rel="manifest" href="manifest.json?v=10" />
-  <link rel="stylesheet" href="styles.css?v=10" />
+  <link rel="manifest" href="manifest.json?v=11" />
+  <link rel="stylesheet" href="styles.css?v=11" />
 </head>
 <body>
   <div class="app-shell">
@@ -17,7 +17,6 @@
       <div class="subtitle">Abwasser-Aufmaß</div>
       <button id="homeBtn" class="icon-btn" aria-label="Hauptseite">⌂</button>
     </header>
-
     <main id="app" class="content" aria-live="polite"></main>
   </div>
 
@@ -36,14 +35,13 @@
     </section>
   </template>
 
-  <script src="photo-store.js?v=10"></script>
-  <script src="app.js?v=10"></script>
-  <script src="pdf-unicode.js?v=10"></script>
-  <script src="photo-ui.js?v=10"></script>
-  <script src="pdf-photos.js?v=10"></script>
-  <script src="workflow-v4.js?v=10"></script>
+  <script src="app.js?v=11"></script>
+  <script src="workflow-v4.js?v=11"></script>
   <script>
-    document.getElementById('homeBtn').addEventListener('click',()=>window.SHKWorkflowV4?.renderHome());
+    const showHome=()=>window.SHKWorkflowV4?.renderHome();
+    document.getElementById('homeBtn').addEventListener('click',showHome);
+    document.getElementById('brandHome').addEventListener('click',showHome);
+    document.getElementById('brandHome').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();showHome();}});
   </script>
 </body>
 </html>
