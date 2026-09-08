@@ -72,10 +72,8 @@ function render(name){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-// Compatibility hook for the photo module. The old summary screen no longer owns navigation.
 function buildSummary(){}
 
-// These are replaced by the PDF modules loaded afterwards.
 function makePdfBlob(){
   return new Blob(['PDF-Modul wird geladen.'], {type:'application/pdf'});
 }
@@ -104,8 +102,5 @@ async function shareProject(){
 }
 
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=10'));
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=11'));
 }
-
-// Wichtig: absichtlich KEIN render() beim Laden.
-// Die neue workflow-v4.js ist allein für Hauptseite und Aufmaßnavigation zuständig.
