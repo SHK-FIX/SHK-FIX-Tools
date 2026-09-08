@@ -17,6 +17,15 @@ function toWinAnsiBinary(value){
   return out;
 }
 
+function componentText(c){
+  if(c.kind==='Bogen') return `${c.kind} ${c.dn || '–'} ${c.angle || ''} × ${c.qty || 1}`;
+  if(c.kind==='Abzweig') return `${c.kind} ${c.mainDn || '–'} / ${c.branchDn || '–'} – ${c.angle || ''} × ${c.qty || 1}`;
+  if(c.kind==='Schelle') return `${c.kind} ${c.dn || '–'} × ${c.qty || 1}`;
+  if(c.kind==='Muffe') return `${c.kind} ${c.dn || '–'} × ${c.qty || 1}`;
+  if(c.kind==='Reduzierung') return `${c.kind} ${c.fromDn || '–'} → ${c.toDn || '–'} × ${c.qty || 1}`;
+  return `${c.kind || 'Bauteil'} × ${c.qty || 1}`;
+}
+
 function buildPdfLines(){
   const lines=[
     'SHK FIX – Abwasser-Aufmaß','',
@@ -28,14 +37,30 @@ function buildPdfLines(){
     `Erstellt: ${new Date().toLocaleString('de-DE')}`,'',
     `Erfasste Positionen: ${state.positions.length}`,''
   ];
+
   state.positions.forEach((p,index)=>{
     lines.push(`${index+1}. ${p.module}${p.name ? ` – ${p.name}` : ''}`);
-    lines.push(`   Material: ${p.material || '–'} | Dimension: ${p.dn || '–'} | Länge: ${Number(p.length||0).toLocaleString('de-DE')} m`);
-    const qty=Object.entries(p.qty||{}).filter(([,v])=>Number(v)>0).map(([k,v])=>`${k}: ${v}`).join(' | ');
-    if(qty) lines.push(`   Formteile: ${qty}`);
+    lines.push(`   Material: ${p.material || '–'}`);
+
+    if(Array.isArray(p.pipes) && p.pipes.length){
+      lines.push('   Rohre:');
+      p.pipes.forEach(pipe=>lines.push(`   • ${pipe.dn || '–'} – ${Number(pipe.length||0).toLocaleString('de-DE')} m`));
+    } else {
+      lines.push(`   Rohr: ${p.dn || '–'} – ${Number(p.length||0).toLocaleString('de-DE')} m`);
+    }
+
+    if(Array.isArray(p.components) && p.components.length){
+      lines.push('   Formteile:');
+      p.components.forEach(c=>lines.push(`   • ${componentText(c)}`));
+    } else {
+      const qty=Object.entries(p.qty||{}).filter(([,v])=>Number(v)>0).map(([k,v])=>`${k}: ${v}`).join(' | ');
+      if(qty) lines.push(`   Formteile: ${qty}`);
+    }
+
     if(p.notes) lines.push(`   Hinweis: ${p.notes}`);
     lines.push('');
   });
+
   if(!state.positions.length) lines.push('Keine Positionen erfasst.');
   return lines;
 }
