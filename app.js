@@ -33,6 +33,17 @@ function fmtTime(min){
   if(h) return `${h} Std.`;
   return `${m} Min.`;
 }
+function safeFilePart(value){
+  return String(value || 'ohne-Angabe')
+    .trim()
+    .replace(/[äÄ]/g,'ae').replace(/[öÖ]/g,'oe').replace(/[üÜ]/g,'ue').replace(/ß/g,'ss')
+    .replace(/[^a-zA-Z0-9_-]+/g,'_')
+    .replace(/^_+|_+$/g,'') || 'ohne-Angabe';
+}
+function pdfFileName(){
+  const date = new Date().toISOString().slice(0,10);
+  return `Aufmass_Abwasser_${safeFilePart(state.project.object)}_${safeFilePart(state.project.unit)}_${date}.pdf`;
+}
 
 function wire(name){
   if(name==='project'){
@@ -76,14 +87,135 @@ function createShareText(){
   return `SHK FIX Abwasser-Aufmaß\nObjekt: ${state.project.object}\nBereich: ${state.project.unit}\nAuftragsnr.: ${state.project.orderNo||'–'}\nBearbeiter: ${state.project.worker}\nAufmaßdauer: ${fmtTime(state.minutes)}\nPositionen: ${state.positions.length}`;
 }
 
+function pdfSafe(value){
+  return String(value ?? '')
+    .replace(/[äÄ]/g,'ae').replace(/[öÖ]/g,'oe').replace(/[üÜ]/g,'ue').replace(/ß/g,'ss')
+    .replace(/[–—]/g,'-').replace(/°/g,' Grad').replace(/[^ -~]/g,'?')
+    .replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');
+}
+
+function buildPdfLines(){
+  const lines = [
+    'SHK FIX - Abwasser-Aufmass',
+    '',
+    `Objekt: ${state.project.object || '-'}`,
+    `Wohnung / Bereich: ${state.project.unit || '-'}`,
+    `Auftragsnummer: ${state.project.orderNo || '-'}`,
+    `Bearbeiter: ${state.project.worker || '-'}`,
+    `Aufmassdauer: ${fmtTime(state.minutes)}`,
+    `Erstellt: ${new Date().toLocaleString('de-DE')}`,
+    '',
+    `Erfasste Positionen: ${state.positions.length}`,
+    ''
+  ];
+
+  state.positions.forEach((p,index)=>{
+    lines.push(`${index+1}. ${p.module}${p.name ? ` - ${p.name}` : ''}`);
+    lines.push(`   Material: ${p.material || '-'} | Dimension: ${p.dn || '-'} | Laenge: ${Number(p.length||0).toLocaleString('de-DE')} m`);
+    const qty = Object.entries(p.qty || {}).filter(([,v])=>Number(v)>0).map(([k,v])=>`${k}: ${v}`).join(' | ');
+    if(qty) lines.push(`   Formteile: ${qty}`);
+    if(p.notes) lines.push(`   Hinweis: ${p.notes}`);
+    lines.push('');
+  });
+
+  if(!state.positions.length) lines.push('Keine Positionen erfasst.');
+  return lines;
+}
+
+function makePdfBlob(){
+  const pageWidth = 595;
+  const pageHeight = 842;
+  const marginX = 48;
+  const topY = 790;
+  const lineHeight = 16;
+  const linesPerPage = 43;
+  const sourceLines = buildPdfLines().map(pdfSafe);
+  const pages = [];
+  for(let i=0;i<sourceLines.length;i+=linesPerPage) pages.push(sourceLines.slice(i,i+linesPerPage));
+  if(!pages.length) pages.push(['SHK FIX - Abwasser-Aufmass']);
+
+  const objects = [];
+  const addObject = body => { objects.push(body); return objects.length; };
+  const fontObj = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+  const boldFontObj = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+  const pageObjIds = [];
+  const contentObjIds = [];
+
+  pages.forEach((pageLines,pageIndex)=>{
+    let stream = 'BT\n/F1 11 Tf\n';
+    let y = topY;
+    pageLines.forEach((line,lineIndex)=>{
+      const isTitle = pageIndex===0 && lineIndex===0;
+      stream += `${isTitle ? '/F2 16 Tf' : '/F1 11 Tf'}\n1 0 0 1 ${marginX} ${y} Tm\n(${line}) Tj\n`;
+      y -= isTitle ? 28 : lineHeight;
+    });
+    stream += 'ET';
+    const contentId = addObject(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
+    contentObjIds.push(contentId);
+    const pageId = addObject('PENDING_PAGE');
+    pageObjIds.push(pageId);
+  });
+
+  const pagesObj = addObject('PENDING_PAGES');
+  const catalogObj = addObject(`<< /Type /Catalog /Pages ${pagesObj} 0 R >>`);
+
+  pageObjIds.forEach((pageId,i)=>{
+    objects[pageId-1] = `<< /Type /Page /Parent ${pagesObj} 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${fontObj} 0 R /F2 ${boldFontObj} 0 R >> >> /Contents ${contentObjIds[i]} 0 R >>`;
+  });
+  objects[pagesObj-1] = `<< /Type /Pages /Kids [${pageObjIds.map(id=>`${id} 0 R`).join(' ')}] /Count ${pageObjIds.length} >>`;
+
+  let pdf = '%PDF-1.4\n';
+  const offsets = [0];
+  objects.forEach((body,i)=>{
+    offsets.push(pdf.length);
+    pdf += `${i+1} 0 obj\n${body}\nendobj\n`;
+  });
+  const xrefOffset = pdf.length;
+  pdf += `xref\n0 ${objects.length+1}\n0000000000 65535 f \n`;
+  for(let i=1;i<=objects.length;i++) pdf += `${String(offsets[i]).padStart(10,'0')} 00000 n \n`;
+  pdf += `trailer\n<< /Size ${objects.length+1} /Root ${catalogObj} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+  return new Blob([pdf], {type:'application/pdf'});
+}
+
+function downloadPdf(){
+  const blob = makePdfBlob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = pdfFileName();
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
 async function shareProject(){
   const title=`Abwasser-Aufmaß | ${state.project.object} | ${state.project.unit}`;
   const text=createShareText();
-  if(navigator.share){
-    try { await navigator.share({title,text}); return; } catch(e){ if(e.name==='AbortError') return; }
+  const file = new File([makePdfBlob()], pdfFileName(), {type:'application/pdf'});
+
+  if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+    try {
+      await navigator.share({title,text,files:[file]});
+      return;
+    } catch(e){
+      if(e.name==='AbortError') return;
+    }
   }
+
+  if(navigator.share){
+    try {
+      await navigator.share({title,text});
+      downloadPdf();
+      alert('Die PDF wurde zusätzlich gespeichert. Du kannst sie jetzt in Mail oder WhatsApp anhängen.');
+      return;
+    } catch(e){ if(e.name==='AbortError') return; }
+  }
+
+  downloadPdf();
   await navigator.clipboard?.writeText(text);
-  alert('Zusammenfassung kopiert. Jetzt über Mail oder WhatsApp teilen.');
+  alert('PDF gespeichert und Zusammenfassung kopiert. Jetzt über Mail oder WhatsApp teilen.');
 }
 
 function savePosition(){
@@ -123,7 +255,7 @@ document.addEventListener('click', async e=>{
   if(action==='to-summary') render('summary');
   if(action==='back-measure') render('measure');
   if(action==='save-position') savePosition();
-  if(action==='print') window.print();
+  if(action==='print') downloadPdf();
   if(action==='share') await shareProject();
 });
 
